@@ -102,16 +102,10 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-ink-950 text-gray-100 flex flex-col font-sans selection:bg-azure-500/30 selection:text-white relative">
-      {/* Background ambient radial lights */}
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(0,120,212,0.12),transparent)]" />
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_500px_at_80%_80%,rgba(212,175,55,0.05),transparent)]" />
+    <div className="min-h-screen bg-[#F4F6F9] text-slate-800 flex flex-col font-sans">
+      <Header />
 
-      {/* Main App Container */}
-      <div className="relative z-10 flex-1 flex flex-col">
-        <Header />
-
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 flex-1 w-full">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-5 flex-1 w-full">
           {/* Section 1: Filters */}
           <SearchFilters
             params={params}
@@ -146,7 +140,6 @@ export default function App() {
           {/* Section 4: Public Pricing Disclaimer */}
           <Disclaimer />
         </main>
-      </div>
     </div>
   );
 }

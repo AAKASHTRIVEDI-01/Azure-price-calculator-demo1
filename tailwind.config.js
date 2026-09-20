@@ -1,32 +1,32 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        ink: {
-          950: '#07090A',
-          900: '#0C1014',
-          850: '#10151C',
-          800: '#161D26',
-          700: '#212B38',
-        },
         azure: {
-          300: '#7DD3FC',
-          400: '#38BDF8',
-          500: '#0078D4',
-          600: '#0284C7',
-          700: '#0369A1',
-        },
-        gold: {
-          300: '#FDE047',
-          400: '#D4AF37',
-          500: '#B89628',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#0078D4', // Microsoft Azure Primary Blue
+          600: '#106EBE', // Azure Hover Blue
+          700: '#005A9E', // Azure Darker Blue
+          800: '#004578',
+          900: '#002451', // Azure Deep Navy
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: [
+          '"Segoe UI"',
+          'Roboto',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+        ],
       },
     },
   },

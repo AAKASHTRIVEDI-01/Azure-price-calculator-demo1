@@ -1,5 +1,5 @@
 import React from 'react';
-import { Server, MapPin, Gauge, Calendar, Tag } from 'lucide-react';
+import { Server, MapPin, Gauge, Tag } from 'lucide-react';
 import type { AzurePriceItem, CalculationConfig } from '../types/pricing';
 import { formatCurrency, calculateItemCost, cleanSkuDisplayName } from '../utils/formatters';
 
@@ -20,54 +20,54 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   const isLowPriority = item.meterName.toLowerCase().includes('low priority') || item.skuName.toLowerCase().includes('low priority');
 
   return (
-    <div className="group rounded-2xl border border-white/8 bg-ink-900/70 p-5 sm:p-6 backdrop-blur-md transition-all duration-300 hover:border-azure-500/40 hover:bg-ink-850 hover:shadow-[0_0_28px_rgba(0,120,212,0.12)] flex flex-col justify-between">
+    <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-azure-400 transition-all flex flex-col justify-between">
       <div>
-        {/* Top Badges & Meta */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/6 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-md bg-azure-500/10 border border-azure-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-azure-300">
-              <Server className="h-3 w-3" />
+        {/* Top Badges & Region */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 rounded bg-blue-50 border border-blue-200 px-2 py-0.5 text-[11px] font-semibold text-azure-700">
+              <Server className="h-3 w-3 text-azure-600" />
               {item.serviceName}
             </span>
 
             {isSpot ? (
-              <span className="inline-flex items-center rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-                Spot Instance
+              <span className="inline-flex items-center rounded bg-amber-50 border border-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                Spot
               </span>
             ) : isLowPriority ? (
-              <span className="inline-flex items-center rounded-md bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 text-[10px] font-semibold text-purple-300">
+              <span className="inline-flex items-center rounded bg-purple-50 border border-purple-200 px-2 py-0.5 text-[11px] font-medium text-purple-700">
                 Low Priority
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                Standard On-Demand
+              <span className="inline-flex items-center rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                On-Demand
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] text-gray-400">
-            <MapPin className="h-3 w-3 text-azure-400" />
-            <span>{item.location} ({item.armRegionName})</span>
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            <MapPin className="h-3 w-3 text-azure-600" />
+            <span>{item.location}</span>
           </div>
         </div>
 
         {/* Product Title & SKU */}
-        <div className="mt-4">
+        <div className="mt-3.5">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="font-display text-base sm:text-lg font-bold text-white group-hover:text-azure-300 transition-colors leading-snug">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-azure-600 transition-colors leading-snug">
                 {cleanSkuDisplayName(item.skuName, item.meterName)}
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5">{item.productName}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{item.productName}</p>
             </div>
 
             {/* OS Badge */}
             {item.serviceName === 'Virtual Machines' && (
               <span
-                className={`rounded-md px-2 py-0.5 text-[10px] font-semibold flex-none ${
+                className={`rounded px-2 py-0.5 text-[10px] font-semibold flex-none border ${
                   isWindows
-                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 }`}
               >
                 {isWindows ? 'Windows' : 'Linux'}
@@ -76,83 +76,71 @@ export const PricingCard: React.FC<PricingCardProps> = ({
           </div>
         </div>
 
-        {/* Calculation Cost Showcase Card */}
-        <div className="mt-5 rounded-xl border border-white/6 bg-black/40 p-3.5">
+        {/* Pricing Breakdown Box */}
+        <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 p-3.5">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-gray-400">Unit Retail Price</span>
-            <span className="font-mono text-xs text-gray-300">
+            <span className="text-xs font-medium text-slate-500">Unit Retail Price</span>
+            <span className="text-xs text-slate-500">
               per {item.unitOfMeasure}
             </span>
           </div>
 
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <span className="text-2xl sm:text-3xl font-bold text-slate-900">
               {formatCurrency(item.retailPrice, currencyCode)}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-slate-500">
               / {item.unitOfMeasure}
             </span>
           </div>
 
-          {/* Monthly & Annual Projection Grid */}
-          <div className="mt-3.5 grid grid-cols-2 gap-2.5 border-t border-white/6 pt-3">
+          {/* Monthly & Annual Projection */}
+          <div className="mt-3 grid grid-cols-2 gap-2.5 border-t border-slate-200 pt-2.5">
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
-                Estimated Monthly
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                Monthly Est.
               </div>
-              <div className="mt-0.5 text-base sm:text-lg font-bold text-gold-300 font-mono">
+              <div className="mt-0.5 text-base sm:text-lg font-bold text-azure-700">
                 {formatCurrency(calc.monthlyCost, currencyCode)}
               </div>
-              <div className="text-[10px] text-gray-500">
-                {calc.isHourly ? `@ ${calcConfig.hoursPerMonth}h × ${calcConfig.quantity} qty` : `flat × ${calcConfig.quantity} qty`}
+              <div className="text-[10px] text-slate-500">
+                {calc.isHourly ? `${calcConfig.hoursPerMonth}h × ${calcConfig.quantity} qty` : `flat × ${calcConfig.quantity}`}
               </div>
             </div>
 
             <div>
-              <div className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
-                Estimated Annual
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                Annual Est.
               </div>
-              <div className="mt-0.5 text-base sm:text-lg font-bold text-emerald-400 font-mono">
+              <div className="mt-0.5 text-base sm:text-lg font-bold text-slate-800">
                 {formatCurrency(calc.annualCost, currencyCode)}
               </div>
-              <div className="text-[10px] text-gray-500">
-                12-month projection
+              <div className="text-[10px] text-slate-500">
+                12 months projection
               </div>
             </div>
           </div>
         </div>
 
-        {/* Technical Meter Details */}
-        <div className="mt-4 space-y-1.5 text-[11px] text-gray-400">
+        {/* Technical Details */}
+        <div className="mt-3.5 space-y-1 text-xs text-slate-500 border-t border-slate-100 pt-2.5">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-gray-500">
+            <span className="flex items-center gap-1 text-slate-400">
               <Gauge className="h-3 w-3" />
-              Meter Name:
+              Meter:
             </span>
-            <span className="font-medium text-gray-300 truncate max-w-[200px]" title={item.meterName}>
+            <span className="font-medium text-slate-700 truncate max-w-[200px]" title={item.meterName}>
               {item.meterName}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-gray-500">
+            <span className="flex items-center gap-1 text-slate-400">
               <Tag className="h-3 w-3" />
-              ARM SKU:
+              SKU Name:
             </span>
-            <span className="font-mono text-gray-300">
+            <span className="text-slate-700">
               {item.armSkuName || item.skuName || 'Standard'}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-gray-500">
-              <Calendar className="h-3 w-3" />
-              Rate Effective Date:
-            </span>
-            <span className="text-gray-400">
-              {item.effectiveStartDate
-                ? new Date(item.effectiveStartDate).toLocaleDateString()
-                : 'Active Tier'}
             </span>
           </div>
         </div>
