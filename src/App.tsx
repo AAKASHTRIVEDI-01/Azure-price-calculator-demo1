@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AzurePriceItem, SearchParams, CalculationConfig } from './types/pricing';
 import { buildAzurePricesUrl, fetchAzurePrices } from './services/azurePricingApi';
 import { Header } from './components/Header';
@@ -30,6 +30,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [nextPageLink, setNextPageLink] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [isCachedFallback, setIsCachedFallback] = useState<boolean>(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -47,9 +48,10 @@ export default function App() {
 
     try {
       const url = buildAzurePricesUrl(params);
-      const data = await fetchAzurePrices(url, controller.signal);
+      const data = await fetchAzurePrices(url, controller.signal, params);
       setItems(data.Items || []);
       setNextPageLink(data.NextPageLink || null);
+      setIsCachedFallback(Boolean(data.isCachedFallback));
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         return; // Ignore aborted requests
@@ -71,7 +73,7 @@ export default function App() {
 
     setIsLoadingMore(true);
     try {
-      const data = await fetchAzurePrices(nextPageLink);
+      const data = await fetchAzurePrices(nextPageLink, undefined, params);
       setItems((prev) => [...prev, ...(data.Items || [])]);
       setNextPageLink(data.NextPageLink || null);
     } catch (err: unknown) {
@@ -138,6 +140,7 @@ export default function App() {
             calcConfig={calcConfig}
             currencyCode={params.currency}
             hasSearched={hasSearched}
+            isCachedFallback={isCachedFallback}
           />
 
           {/* Section 4: Public Pricing Disclaimer */}

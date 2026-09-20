@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Server, MapPin, Gauge, Calendar, Tag } from 'lucide-react';
 import type { AzurePriceItem, CalculationConfig } from '../types/pricing';
 import { formatCurrency, calculateItemCost, cleanSkuDisplayName } from '../utils/formatters';
@@ -150,7 +150,9 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               Rate Effective Date:
             </span>
             <span className="text-gray-400">
-              {new Date(item.effectiveStartDate).toLocaleDateString()}
+              {item.effectiveStartDate
+                ? new Date(item.effectiveStartDate).toLocaleDateString()
+                : 'Active Tier'}
             </span>
           </div>
         </div>

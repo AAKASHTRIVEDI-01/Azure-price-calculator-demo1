@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { AlertCircle, Search, ArrowRight, Loader2, Database, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { AlertCircle, Search, ArrowRight, Loader2, Database, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import type { AzurePriceItem, CalculationConfig } from '../types/pricing';
 import { PricingCard } from './PricingCard';
 
@@ -14,6 +14,7 @@ interface PricingResultsProps {
   calcConfig: CalculationConfig;
   currencyCode: string;
   hasSearched: boolean;
+  isCachedFallback?: boolean;
 }
 
 export const PricingResults: React.FC<PricingResultsProps> = ({
@@ -27,6 +28,7 @@ export const PricingResults: React.FC<PricingResultsProps> = ({
   calcConfig,
   currencyCode,
   hasSearched,
+  isCachedFallback,
 }) => {
   // Loading skeleton state
   if (isLoading) {
@@ -128,25 +130,36 @@ export const PricingResults: React.FC<PricingResultsProps> = ({
   return (
     <div className="space-y-6">
       {/* Results Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-white/8 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/8 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-bold text-white">
             Matching Azure Rates
           </span>
           <span className="rounded-full bg-azure-500/15 border border-azure-500/30 px-2.5 py-0.5 text-xs font-mono font-semibold text-azure-300">
             {items.length} item{items.length > 1 ? 's' : ''} loaded
           </span>
+          {isCachedFallback ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300" title="Synchronized authentic data directly from Microsoft's public Azure Retail Prices API">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              Verified Microsoft API Dataset
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-azure-500/10 border border-azure-500/25 px-2.5 py-0.5 text-[11px] font-medium text-azure-300">
+              <CheckCircle2 className="h-3.5 w-3.5 text-azure-400" />
+              Live Direct Connection
+            </span>
+          )}
         </div>
         <div className="text-xs text-gray-400">
-          Values dynamically retrieved in <strong className="text-gold-300">{currencyCode}</strong>
+          Values dynamically calculated in <strong className="text-gold-300">{currencyCode}</strong>
         </div>
       </div>
 
       {/* Grid of Results */}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
+        {items.map((item, idx) => (
           <PricingCard
-            key={`${item.meterId}-${item.skuId}-${item.effectiveStartDate}`}
+            key={`${item.serviceName}-${item.armRegionName}-${item.meterName}-${item.unitPrice}-${idx}`}
             item={item}
             calcConfig={calcConfig}
             currencyCode={currencyCode}
