@@ -118,6 +118,29 @@ async function getLocalDataset(): Promise<AzurePriceItem[]> {
   return result || [];
 }
 
+export function normalizeSearchString(str: string): string {
+  return (str || '')
+    .toLowerCase()
+    .replace(/[-_/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchesSkuKeywords(item: AzurePriceItem, query: string): boolean {
+  if (!query || !query.trim()) return true;
+  const normalizedQuery = normalizeSearchString(query);
+  const rawTokens = normalizedQuery.split(' ').filter((t) => t.length > 0);
+  // Ignore generic filler word 'standard' if other specific tokens exist (e.g. 'standard d4s' -> 'd4s')
+  const specificTokens = rawTokens.filter((t) => t !== 'standard');
+  const tokens = specificTokens.length > 0 ? specificTokens : rawTokens;
+
+  const searchableText = normalizeSearchString(
+    `${item.meterName} ${item.skuName} ${item.productName} ${item.armSkuName || ''} ${item.serviceName}`
+  );
+
+  return tokens.every((token) => searchableText.includes(token));
+}
+
 /**
  * Queries the authentic local dataset in-memory when direct CORS is blocked
  */
@@ -130,47 +153,51 @@ export async function queryLocalDataset(
   const rate = CURRENCY_RATES[targetCurrency] || 1.0;
   lastCurrency = targetCurrency;
 
-  const filtered = dataset.filter((item) => {
-    // 1. Service Filter
-    if (params.serviceName && params.serviceName.trim()) {
-      const queryService = normalizeServiceName(params.serviceName).toLowerCase();
-      const itemService = normalizeServiceName(item.serviceName).toLowerCase();
-      if (!itemService.includes(queryService) && !queryService.includes(itemService)) {
-        return false;
+  const filterItem = (item: AzurePriceItem, enforceServiceAndRegion: boolean) => {
+    if (enforceServiceAndRegion) {
+      // 1. Service Filter
+      if (params.serviceName && params.serviceName.trim()) {
+        const queryService = normalizeServiceName(params.serviceName).toLowerCase();
+        const itemService = normalizeServiceName(item.serviceName).toLowerCase();
+        if (!itemService.includes(queryService) && !queryService.includes(itemService)) {
+          return false;
+        }
+      }
+
+      // 2. Region Filter
+      if (params.armRegionName && params.armRegionName.trim() && params.armRegionName !== 'all') {
+        if (item.armRegionName.toLowerCase() !== params.armRegionName.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 3. OS Filter
+      if (params.osFilter === 'windows') {
+        if (!item.productName.toLowerCase().includes('windows')) return false;
+      } else if (params.osFilter === 'linux') {
+        if (item.productName.toLowerCase().includes('windows')) return false;
       }
     }
 
-    // 2. Region Filter
-    if (params.armRegionName && params.armRegionName.trim() && params.armRegionName !== 'all') {
-      if (item.armRegionName.toLowerCase() !== params.armRegionName.toLowerCase()) {
-        return false;
-      }
-    }
-
-    // 3. Price Type Filter
+    // 4. Price Type Filter
     if (params.priceType && params.priceType !== 'all') {
       if ((item.type || 'Consumption').toLowerCase() !== params.priceType.toLowerCase()) {
         return false;
       }
     }
 
-    // 4. OS Filter
-    if (params.osFilter === 'windows') {
-      if (!item.productName.toLowerCase().includes('windows')) return false;
-    } else if (params.osFilter === 'linux') {
-      if (item.productName.toLowerCase().includes('windows')) return false;
-    }
+    // 5. SKU / Keyword query
+    return matchesSkuKeywords(item, params.skuQuery);
+  };
 
-    // 5. SKU / Keyword query (matches all space-separated tokens)
-    if (params.skuQuery && params.skuQuery.trim()) {
-      const tokens = params.skuQuery.toLowerCase().trim().split(/\s+/);
-      const searchableText = `${item.meterName} ${item.skuName} ${item.productName} ${item.armSkuName || ''}`.toLowerCase();
-      const allTokensMatch = tokens.every((token) => searchableText.includes(token));
-      if (!allTokensMatch) return false;
-    }
+  // Attempt 1: Strict matching with user's selected filters
+  let filtered = dataset.filter((item) => filterItem(item, true));
 
-    return true;
-  });
+  // Attempt 2: If strict matching yielded 0 results and user provided an SKU,
+  // search across all regions and services so the user is never stuck
+  if (filtered.length === 0 && params.skuQuery && params.skuQuery.trim()) {
+    filtered = dataset.filter((item) => filterItem(item, false));
+  }
 
   // Apply currency conversion to matching items
   lastFilteredItems = filtered.map((item) => ({

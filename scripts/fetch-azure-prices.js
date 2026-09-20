@@ -1,7 +1,8 @@
 /**
- * Build script to pre-fetch authentic Microsoft Azure Retail Prices
+ * Script to pre-fetch authentic Microsoft Azure Retail Prices
  * from https://prices.azure.com/api/retail/prices.
- * This runs at build time on the server/CI where CORS is not enforced by browsers.
+ * Collects comprehensive SKU coverage across all major VM families,
+ * storage types, databases, and enterprise cloud services.
  */
 
 import fs from 'node:fs';
@@ -14,45 +15,63 @@ const __dirname = path.dirname(__filename);
 const TARGET_DIR = path.resolve(__dirname, '../public/data');
 const TARGET_FILE = path.join(TARGET_DIR, 'azure-prices.json');
 
-// Queries designed to fetch broad coverage across top services, popular SKUs, and major regions
-const QUERIES = [
-  // Popular VM SKUs across all regions
-  "contains(meterName, 'D4s v5') and priceType eq 'Consumption'",
-  "contains(meterName, 'D2s v5') and priceType eq 'Consumption'",
-  "contains(meterName, 'B2s') and priceType eq 'Consumption'",
-  "contains(meterName, 'B4ms') and priceType eq 'Consumption'",
-  "contains(meterName, 'E4s v5') and priceType eq 'Consumption'",
-  "contains(meterName, 'F4s v2') and priceType eq 'Consumption'",
-  // Regional VM queries for high traffic regions
-  "serviceName eq 'Virtual Machines' and armRegionName eq 'centralindia' and priceType eq 'Consumption'",
-  "serviceName eq 'Virtual Machines' and armRegionName eq 'eastus' and priceType eq 'Consumption'",
-  "serviceName eq 'Virtual Machines' and armRegionName eq 'westeurope' and priceType eq 'Consumption'",
-  "serviceName eq 'Virtual Machines' and armRegionName eq 'southeastasia' and priceType eq 'Consumption'",
-  // Key Azure Services
-  "serviceName eq 'Storage' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure App Service' and priceType eq 'Consumption'",
-  "serviceName eq 'SQL Database' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Kubernetes Service' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Cosmos DB' and priceType eq 'Consumption'",
-  "serviceName eq 'Functions' and priceType eq 'Consumption'",
-  "serviceName eq 'Bandwidth' and priceType eq 'Consumption'",
-  "serviceName eq 'Container Instances' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Firewall' and priceType eq 'Consumption'",
-  "serviceName eq 'Key Vault' and priceType eq 'Consumption'",
-  "serviceName eq 'Log Analytics' and priceType eq 'Consumption'",
-  "serviceName eq 'Virtual Network' and priceType eq 'Consumption'",
-  "serviceName eq 'Cognitive Services' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure DevOps' and priceType eq 'Consumption'",
-  "serviceName eq 'Container Registry' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Database for PostgreSQL' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Database for MySQL' and priceType eq 'Consumption'",
-  "serviceName eq 'Event Hubs' and priceType eq 'Consumption'",
-  "serviceName eq 'Service Bus' and priceType eq 'Consumption'",
-  "serviceName eq 'API Management' and priceType eq 'Consumption'",
-  "serviceName eq 'Application Gateway' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Bastion' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Monitor' and priceType eq 'Consumption'",
-  "serviceName eq 'Azure Front Door Service' and priceType eq 'Consumption'",
+// Queries with pagination limits to guarantee rich SKU variety
+const QUERY_CONFIGS = [
+  // 1. Broad Service Queries (multi-page)
+  { filter: "serviceName eq 'Virtual Machines' and priceType eq 'Consumption'", maxPages: 12 },
+  { filter: "serviceName eq 'Storage' and priceType eq 'Consumption'", maxPages: 6 },
+  { filter: "serviceName eq 'SQL Database' and priceType eq 'Consumption'", maxPages: 5 },
+  { filter: "serviceName eq 'Azure App Service' and priceType eq 'Consumption'", maxPages: 4 },
+  { filter: "serviceName eq 'Azure Kubernetes Service' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Azure Cosmos DB' and priceType eq 'Consumption'", maxPages: 3 },
+  { filter: "serviceName eq 'Functions' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Bandwidth' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Container Instances' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Azure Firewall' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Key Vault' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Log Analytics' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Virtual Network' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Azure Database for PostgreSQL' and priceType eq 'Consumption'", maxPages: 3 },
+  { filter: "serviceName eq 'Azure Database for MySQL' and priceType eq 'Consumption'", maxPages: 3 },
+  { filter: "serviceName eq 'Container Registry' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'API Management' and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "serviceName eq 'Application Gateway' and priceType eq 'Consumption'", maxPages: 2 },
+
+  // 2. Specific SKU Family Targets (Guarantees popular SKUs exist in all regions)
+  // B-series (Burstable VMs)
+  { filter: "contains(meterName, 'B1s') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'B1ms') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'B2s') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'B2ms') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'B4ms') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'B8ms') and priceType eq 'Consumption'", maxPages: 2 },
+
+  // D-series (General Purpose)
+  { filter: "contains(meterName, 'D2s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D4s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D8s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D16s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D32s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D2s v4') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D4s v4') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'D8s v4') and priceType eq 'Consumption'", maxPages: 2 },
+
+  // E-series (Memory Optimized)
+  { filter: "contains(meterName, 'E2s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'E4s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'E8s v5') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'E16s v5') and priceType eq 'Consumption'", maxPages: 2 },
+
+  // F-series (Compute Optimized)
+  { filter: "contains(meterName, 'F2s v2') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'F4s v2') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'F8s v2') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'F16s v2') and priceType eq 'Consumption'", maxPages: 2 },
+
+  // N-series (GPU Workloads)
+  { filter: "contains(meterName, 'NV6') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'NV12') and priceType eq 'Consumption'", maxPages: 2 },
+  { filter: "contains(meterName, 'NC6') and priceType eq 'Consumption'", maxPages: 2 },
 ];
 
 async function fetchWithRetry(url, retries = 3) {
@@ -68,13 +87,13 @@ async function fetchWithRetry(url, retries = 3) {
     } catch (err) {
       console.warn(`Request error (${err.message}), retrying ${i + 1}/${retries}...`);
     }
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1000));
   }
   return null;
 }
 
 async function main() {
-  console.log('Fetching authentic Azure retail prices from Microsoft...');
+  console.log('Fetching comprehensive Azure retail prices from Microsoft...');
   if (!fs.existsSync(TARGET_DIR)) {
     fs.mkdirSync(TARGET_DIR, { recursive: true });
   }
@@ -82,14 +101,20 @@ async function main() {
   const allItems = [];
   const seenKeys = new Set();
 
-  for (let i = 0; i < QUERIES.length; i++) {
-    const query = QUERIES[i];
-    const encoded = encodeURIComponent(query);
-    const url = `https://prices.azure.com/api/retail/prices?$filter=${encoded}`;
-    console.log(`[${i + 1}/${QUERIES.length}] Querying: ${query.slice(0, 60)}...`);
+  for (let i = 0; i < QUERY_CONFIGS.length; i++) {
+    const config = QUERY_CONFIGS[i];
+    let nextUrl = `https://prices.azure.com/api/retail/prices?$filter=${encodeURIComponent(config.filter)}`;
+    let page = 0;
 
-    const data = await fetchWithRetry(url);
-    if (data && Array.isArray(data.Items)) {
+    console.log(`[${i + 1}/${QUERY_CONFIGS.length}] Target: ${config.filter.slice(0, 60)}...`);
+
+    while (nextUrl && page < config.maxPages) {
+      page++;
+      const data = await fetchWithRetry(nextUrl);
+      if (!data || !Array.isArray(data.Items) || data.Items.length === 0) {
+        break;
+      }
+
       let added = 0;
       for (const item of data.Items) {
         const key = `${item.skuId || item.meterId}-${item.armRegionName}-${item.meterName}`;
@@ -112,16 +137,14 @@ async function main() {
           });
         }
       }
-      console.log(`   -> Fetched ${data.Items.length} items (${added} new, total: ${allItems.length})`);
-    } else {
-      console.warn(`   -> No items returned for query`);
-    }
 
-    // Be gentle with rate limits
-    await new Promise((r) => setTimeout(r, 300));
+      console.log(`   Page ${page}: got ${data.Items.length} items (${added} unique added, total: ${allItems.length})`);
+      nextUrl = data.NextPageLink || null;
+      await new Promise((r) => setTimeout(r, 300));
+    }
   }
 
-  console.log(`\nCollection complete! Total unique items collected: ${allItems.length}`);
+  console.log(`\nCollection complete! Total unique items: ${allItems.length}`);
 
   const output = {
     updatedAt: new Date().toISOString(),

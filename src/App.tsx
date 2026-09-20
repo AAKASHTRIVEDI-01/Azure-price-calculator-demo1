@@ -8,10 +8,10 @@ import { PricingResults } from './components/PricingResults';
 import { Disclaimer } from './components/Disclaimer';
 
 const INITIAL_SEARCH_PARAMS: SearchParams = {
-  serviceName: 'Virtual Machines',
-  armRegionName: 'centralindia',
+  serviceName: '',
+  armRegionName: 'all',
   skuQuery: 'D4s v5',
-  osFilter: 'linux',
+  osFilter: 'all',
   currency: 'USD',
   priceType: 'Consumption',
 };
