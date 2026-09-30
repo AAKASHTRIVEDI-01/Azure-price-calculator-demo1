@@ -222,6 +222,10 @@ export async function queryLocalDataset(
   };
 }
 
+// Local cache for direct API requests to improve performance
+const API_CACHE = new Map<string, { data: AzurePriceResponse; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
 /**
  * Fetches Azure retail prices with direct API call and seamless local dataset fallback
  */
@@ -248,6 +252,12 @@ export async function fetchAzurePrices(
     };
   }
 
+  // Check cache for this exact URL
+  const cached = API_CACHE.get(url);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return { ...cached.data, isCachedFallback: false };
+  }
+
   // Attempt direct call to Microsoft Azure Retail Prices API
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s fast timeout
@@ -270,6 +280,10 @@ export async function fetchAzurePrices(
     }
 
     const data: AzurePriceResponse = await response.json();
+    
+    // Save to cache
+    API_CACHE.set(url, { data, timestamp: Date.now() });
+    
     return {
       ...data,
       isCachedFallback: false,
