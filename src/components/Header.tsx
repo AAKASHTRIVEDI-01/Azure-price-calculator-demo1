@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Cloud, ShieldCheck, Zap } from 'lucide-react';
 
 export const Header: React.FC = () => {
