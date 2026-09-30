@@ -182,3 +182,12 @@ Because `vite.config.ts` uses `base: './'`, all bundled assets load with relativ
 **Aakash Trivedi**
 * Cloud & DevOps Engineer
 * Microsoft Certified: Azure Administrator Associate (AZ-104)
+
+## Installation & Usage
+
+`ash
+npm install
+npm run dev
+npm run build
+`
+
