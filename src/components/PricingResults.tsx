@@ -65,7 +65,7 @@ export const PricingResults: React.FC<PricingResultsProps> = ({
   // Error State
   if (error) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center">
+      <div className="rounded-xl border border-rose-200 bg-white p-8 text-center shadow-sm">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600 mb-3">
           <AlertCircle className="h-6 w-6" />
         </div>
